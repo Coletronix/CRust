@@ -1,0 +1,168 @@
+MSP432 Device Support Files v7.1.0
+====================================
+02/22/2017
+
+    Components: 
+    - MSP432 header and support files:
+      = Header files
+      = Startup files
+      = Linker files
+      = Example and template files
+      = Debugger files
+
+    MSP432 Header and Support Files Changes:
+    - Adding CMSIS 5 core header files
+    - Fixing issues with GCC startup file
+    - Corrected defines for CCS project wizard (GCC projects)
+    - Issue a hard reset before program load on MSP-FET
+
+MSP432 Device Support Files v6.3.1.1
+====================================
+08/25/2016
+
+    Components: 
+    - MSP432 header and support files:
+      = Header files
+      = Startup files
+      = Linker files
+      = Example and template files
+      = Debugger files
+    - CCS Flash Loader for MSP432P4
+
+    Enhancements for CCS Flash Loader:
+    - Adding warning for outdated XMS material (visit www.ti.com/XMS432Support for details)
+    - Improved context switch when invoking Flash Loader
+    - Fix for "Erase necassary segment only" option
+
+    MSP432 Header and Support Files Changes:
+    - Corrected bug in system_msp432p401x.c
+    - Added definition for COMP_E in device specific header file
+    - Making SWD default protocol for MSP432P401x
+    - Minor fixed to device xml files
+    - Offering board reset in case DAP is not accessible
+    - Improved stack top definition in GCC linker file
+
+
+MSP432 Device Support Files v6.3.0.6
+====================================
+
+    Components: 
+    - MSP432 header and support files:
+      = Header files
+      = Startup files
+      = Linker files
+      = Example and template files
+      = Debugger files
+    - CCS Flash Loader for MSP432P4
+
+    New device support:
+    - MSP432P401M device variant
+    - Now supporting all package variants:
+      = MSP432P401RIPZ (already supported in previous versions)
+      = MSP432P401RIZXH
+      = MSP432P401RIRGC
+      = MSP432P401MIPZ
+      = MSP432P401MIZXH
+      = MSP432P401MIRGC
+
+    Enhancements for CCS Flash Loader:
+    - Improved memory footprint of RAM loader
+    - Support CCS for Linux 64 bit
+
+    MSP432 Header and Support Files Changes:
+    - New header and support files for MSP432P401M
+    - Changed interrupt definitions to weak interrupts
+    - Updated flash mailbox structure in device specific header file
+    - Added definition for DMA control table alignment in device specific header file
+    - Minor corrections in device specific header file
+    - Allow a factory reset for locked devices during debugger target connect
+    - Enhanced linker files with definitions for info memory
+    - Corrected bug in system_msp432p401x.c
+
+
+MSP432 Device Support Files v6.2.2.0 << Please scroll down for important notice
+====================================
+
+* IMPORTANT NOTICE *
+This Device Support Files package includes MSP432 device specific header files with new 
+coding style compliant to CMSIS standard and prepared for MSP432 RevC silicon material.
+Some application code may run into compiler errors with the new header files.
+For additional information and migration guide please visit http://www.ti.com/MSP432CMSIS
+
+    New device support:
+    - Enabled support of RevB material with revision id 0x4100
+
+
+MSP432 Device Support Files v6.2.1.2
+====================================
+
+    New device support:
+    - MSP432P401R RevC
+	- MSP432P401R ES/ES2 revisions are no longer supported
+
+    Bug fixes in CCS Flash Loader:
+    - Support restore of clock settings after flash programming
+
+    MSP432 Header and Support Files Changes:
+    - Adapted device specific header file coding style to CMSIS
+      = Replaced repeated structs with generic structs
+      = Removed bit fields and Hungarian notation from CMSIS structs
+      = Removed HWREG #defines
+      = Added explicit IP prefix to all bit definitions
+      = Moved MSP430 style registers to msp432p401r_classic.h
+      = Added doxygen style comments
+    - Added CMSIS compliant system_msp432p401r.c source and system_msp432p401r.h header
+    - Renamed msp432_startup_ccs.c to startup_msp432p401r_ccs.c
+    - Renamed msp432_startup_ccs_gcc.c to startup_msp432p401r_gcc.c
+    - Bugfix: Added HAS_PORT definitions to device header file
+    - Bugfix: Corrected wrong MPU_RASR bit fields in device header file
+    - Included definition for MSP432 mailbox structure into device header file
+
+
+MSP432 Device Support Files v6.1.1.3
+====================================
+
+    New device support:
+    - no new device support
+
+    Bug fixes in CCS Flash Loader:
+    - no changes in CCS Flash Loader
+
+    MSP432 Header and Support Files Changes:
+    - Added a warning in device header file to indicate CMSIS update 
+      of headers in March 2016
+
+
+MSP432 Device Support Files v6.1.1.2
+====================================
+
+    New device support:
+    - no new device support
+
+    Bug fixes in CCS Flash Loader:
+    - BSL area cannot be programmed with Flash DLL
+
+    MSP432P401R Header and Support Files Changes:
+    - Bugfix: MSP432 Data Segment Initialization Missing with CCS and GCC
+    - Bugfix: Broken __wfi macro with arm-none-eabi-gcc 4.8.4
+
+
+MSP432 Device Support Files v6.1.1.1
+====================================
+
+    New device support:
+    - no new device support
+
+    Bug fixes in CCS Flash Loader:
+    - Support for Mac OS X
+    - Enable performance optimization for "Erase segments" and "Erase none" cases
+    - Enable Verbose Output in a running debug session is not recognized
+
+    MSP432P401R Header and Support Files Changes:
+    - No changes
+
+
+MSP432 Device Support Files v6.1.0.6
+====================================
+
+    Initial stable version for MSP432P401R

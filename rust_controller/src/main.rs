@@ -17,6 +17,7 @@ use hal::{
     watchdog::{Disable, WDTExt},
 };
 use hardware_drivers::terminal::Terminal;
+use hardware_drivers::rgb::Color;
 
 mod hardware_drivers;
 
@@ -99,17 +100,21 @@ fn main() -> ! {
     led1.set_low().unwrap();
 
     let mut counter = 0;
-    let mut color = hardware_drivers::rgb::Color::Red;
+    let mut color = Color::Red;
     
     let mut num_str = String::<32>::new();
 
     loop {
         led2.set_color(color);
         color = match color {
-            hardware_drivers::rgb::Color::Red => hardware_drivers::rgb::Color::Green,
-            hardware_drivers::rgb::Color::Green => hardware_drivers::rgb::Color::Blue,
-            hardware_drivers::rgb::Color::Blue => hardware_drivers::rgb::Color::Red,
-            _ => hardware_drivers::rgb::Color::Red,
+            Color::Red => Color::Green,
+            Color::Green => Color::Blue,
+            Color::Blue => Color::Red,
+            // Color::Cyan => Color::Magenta,
+            // Color::Magenta => Color::Yellow,
+            // Color::Yellow => Color::White,
+            // Color::White => Color::Red,
+            _ => Color::Red,
         };
 
         

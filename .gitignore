@@ -1,1 +1,6 @@
-/target
+/simulation_viewer/target
+/rust_controller/target
+*.o
+*.d
+*.map
+*.elf

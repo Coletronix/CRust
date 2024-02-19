@@ -2,7 +2,7 @@
 
 bin_name=rust_controller
 
-cargo build -p $bin_name --target thumbv7em-none-eabihf
+cargo build --target thumbv7em-none-eabihf
 
 # check if last command successful and exit if not
 if [ $? -ne 0 ]; then

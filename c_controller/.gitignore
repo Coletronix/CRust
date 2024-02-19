@@ -1,0 +1,5 @@
+provided_resources/
+# ignore .o, .d, .lst
+*.o
+*.d
+*.lst   

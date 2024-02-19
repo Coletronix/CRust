@@ -1,6 +1,7 @@
 [package]
-name = "c_controller"
+name = "simulation_viewer"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+serialport = "4.3.0"

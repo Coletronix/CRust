@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# run clean on the c_controller, rust_controller, and simulation_viewer directories
+
+# c_controller
+echo "Cleaning c_controller"
+cd c_controller
+make clean
+cd ..
+
+# rust_controller
+echo "Cleaning rust_controller"
+cd rust_controller
+cargo clean
+cd ..
+
+# simulation_viewer
+echo "Cleaning simulation_viewer"
+cd simulation_viewer
+cargo clean
+cd ..

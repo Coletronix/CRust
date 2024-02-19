@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# Check if at least one argument is provided
+if [ $# -eq 0 ]; then
+    echo "Usage: $0 [rust|c|sim]"
+    exit 1
+fi
+
+# The main function that selects the action based on the argument
+function run_project() {
+    case $1 in
+        rust)
+            echo "Running the Rust project..."
+            cd rust_controller && ./upload.sh
+            ;;
+        c)
+            echo "Running the C project..."
+            cd c_controller && make flash
+            ;;
+        sim)
+            echo "Running the Simulation Viewer..."
+            cd simulation_viewer && cargo run
+            ;;
+        *)
+            echo "Invalid option: $1"
+            echo "Usage: $0 [rust|c|sim]"
+            exit 1
+            ;;
+    esac
+}
+
+# Call the main function with the first argument
+run_project $1
