@@ -3,4 +3,11 @@ name = "CRust"
 version = "0.1.0"
 edition = "2021"
 
+[workspace]
+members = [
+    "c_controller",
+    "rust_controller",
+]
+
 [dependencies]
+serialport = "4.3.0"

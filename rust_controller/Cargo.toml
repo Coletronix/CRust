@@ -1,0 +1,33 @@
+[package]
+name = "rust_controller"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+panic-halt = "0.2.0"
+irq = "0.2.3"
+cortex-m = "0.7.5"
+cortex-m-rt = "0.7.1"
+msp432p401r-pac = {version = "0.3.0", features = ["rt"]}
+cortex-m-semihosting = "0.5.0"
+embedded-hal = "=1.0.0-alpha.6"
+nb = "1.0.0"
+# https://github.com/msp432-rust/msp432p401r-hal pull most recent version from github directly
+# msp432p401r-hal = { git = "https://github.com/msp432-rust/msp432p401r-hal" }
+
+# use custom library version specified by git url
+msp432p401r-hal = { git = "https://github.com/Coletronix/msp432p401r-hal.git" }
+heapless = "0.8.0"
+
+[profile.dev]
+debug = true
+debug-assertions = true
+# opt-level = "s"
+opt-level = 0
+
+[profile.release]
+opt-level = "s"
+lto = true
+
+[features]
+rt = ["msp432p401r-pac/rt"]
