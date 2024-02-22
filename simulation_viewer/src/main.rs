@@ -1,29 +1,55 @@
-use std::io::{self, Write};
-use std::time::Duration;
+use eframe::egui;
+mod packetextraction;
+use packetextraction::list_ports;
 
-fn main() {
-    let port_name = "/dev/ttyACM0";
-    let baud_rate = 9600;
+fn main() -> Result<(), eframe::Error> {
+    let options = eframe::NativeOptions {
+        viewport: egui::ViewportBuilder::default().with_inner_size([320.0, 240.0]),
+        ..Default::default()
+    };
+    
+    eframe::run_native(
+        "Starter simulator window",
+        options,
+        Box::new(|_cc| {
+            Box::<MyApp>::default()
+        }),
+    )
+}
 
-    let port = serialport::new(port_name, baud_rate)
-        .timeout(Duration::from_millis(10))
-        .open();
+struct MyApp {
+    name: String,
+    age: u32,
+}
 
-    match port {
-        Ok(mut port) => {
-            let mut serial_buf: Vec<u8> = vec![0; 1];
-            println!("Receiving data on {} at {} baud:", &port_name, &baud_rate);
-            loop {
-                // read in a byte
-                if let Ok(_) = port.read_exact(&mut serial_buf) {
-                    print!("{}", serial_buf[0] as char);
-                    io::stdout().flush().unwrap();
-                }
+impl Default for MyApp {
+    fn default() -> Self {
+        Self {
+            name: "Cheese".to_owned(),
+            age: 42,
+        }
+    }
+}
+
+impl eframe::App for MyApp {
+    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        egui::CentralPanel::default().show(ctx, |ui| {
+            ui.heading("My egui Application");
+            ui.horizontal(|ui| {
+                let name_label = ui.label("Your name: ");
+                ui.text_edit_singleline(&mut self.name)
+                    .labelled_by(name_label.id);
+            });
+            ui.add(egui::Slider::new(&mut self.age, 0..=120).text("age"));
+            if ui.button("Increment").clicked() {
+                self.age += 1;
             }
-        }
-        Err(e) => {
-            eprintln!("Failed to open \"{}\". Error: {}", port_name, e);
-            ::std::process::exit(1);
-        }
+            ui.label(format!("Hello '{}', age {}", self.name, self.age));
+            
+
+            for port_name in list_ports() {
+                ui.label(port_name);
+            }
+        });
     }
 }
