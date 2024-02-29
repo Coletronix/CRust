@@ -17,8 +17,8 @@ pub fn list_ports() -> Vec<String> {
                 match p.port_type {
                     SerialPortType::UsbPort(_info) => {
                         ports_v.push(p.port_name);
-                    },
-                    _ => () // default case
+                    }
+                    _ => (), // default case
                 }
             }
         }

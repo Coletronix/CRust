@@ -1,2 +1,0 @@
-cargo:rustc-link-search=native=../C/target/debug
-cargo:rustc-link-lib=static=C
