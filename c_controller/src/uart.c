@@ -159,3 +159,43 @@ void uart2_put(char *ptr_str) {
     while(*ptr_str != 0)
         uart2_putchar(*ptr_str++);
 }
+
+void uart_init() {
+    #ifdef BLE
+        uart2_init();
+    #else
+        uart0_init();
+    #endif
+}
+
+void uart_putchar(char ch) {
+    #ifdef BLE
+        uart2_putchar(ch);
+    #else
+        uart0_putchar(ch);
+    #endif
+}
+
+void uart_put(char *ptr_str) {
+    #ifdef BLE
+        uart2_put(ptr_str);
+    #else
+        uart0_put(ptr_str);
+    #endif
+}
+
+BYTE uart_getchar() {
+    #ifdef BLE
+        uart2_getchar();
+    #else
+        uart0_getchar();
+    #endif
+}
+
+BYTE uart_dataAvailable() {
+    #ifdef BLE
+        uart2_dataAvailable();
+    #else
+        uart0_dataAvailable();
+    #endif
+}

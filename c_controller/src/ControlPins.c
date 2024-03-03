@@ -6,8 +6,6 @@
 #include "ControlPins.h"
 #include "ADC14.h"
 
-
-#include "leds.h"
 extern uint32_t SystemCoreClock;
 
 // default SI integration time is 7.5ms = 133Hz

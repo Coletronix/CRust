@@ -12,8 +12,17 @@
 # Blake Batson - 1/18/2024
 .SILENT:
 
+SIMULATED_HARDWARE = 1
+
 USRSRC = src/main.c
 LABSRCS  = src/uart.c src/leds.c src/switches.c src/Timer32.c src/CortexM.c src/ADC14.c
+
+# If SIMULATED_HARDWARE is defined, use the simulated hardware files
+ifeq ($(SIMULATED_HARDWARE),1)
+	LABSRCS += src/SimulatorInterface.c
+else
+	LABSRCS += src/HardwareInterface.c
+endif
 
 ###############################################################################
 # MSP432 GCC Support Files
