@@ -1,6 +1,8 @@
 use bevy::prelude::*;
 mod gui;
 mod packetextraction;
+mod packets;
+mod serial_interface;
 
 pub fn main() {
     App::new()
