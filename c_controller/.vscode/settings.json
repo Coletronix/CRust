@@ -1,0 +1,11 @@
+{
+    "files.associations": {
+        "*.bd": "json",
+        "msp.h": "c",
+        "uart.h": "c",
+        "cortexm.h": "c",
+        "timer32.h": "c",
+        "leds.h": "c",
+        "math.h": "c"
+    }
+}

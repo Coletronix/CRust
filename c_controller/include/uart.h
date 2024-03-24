@@ -23,8 +23,4 @@ void uart2_putchar(char ch);
 
 void uart2_put(char *ptr_str);
 
-BYTE uart_getchar();
-
-BYTE uart_dataAvailable();
-
 #endif

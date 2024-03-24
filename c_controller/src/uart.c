@@ -186,16 +186,16 @@ void uart_put(char *ptr_str) {
 
 BYTE uart_getchar() {
     #ifdef BLE
-        uart2_getchar();
+        return uart2_getchar();
     #else
-        uart0_getchar();
+        return uart0_getchar();
     #endif
 }
 
 BYTE uart_dataAvailable() {
     #ifdef BLE
-        uart2_dataAvailable();
+        return uart2_dataAvailable();
     #else
-        uart0_dataAvailable();
+        return uart0_dataAvailable();
     #endif
 }
