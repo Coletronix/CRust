@@ -17,11 +17,21 @@
 #include "Timer32.h"
 #include "CortexM.h"
 #include "Common.h"
-extern uint32_t SystemCoreClock;
+#include "Motors.h"
+#include "ServoMotor.h"
+#include "ControlPins.h"
+#include "ADC14.h"
 
-// these are not used by the timer
-BOOLEAN g_sendData = FALSE;
-uint16_t line[128];
+extern uint32_t SystemCoreClock;
+extern uint16_t line[128];
+extern BOOLEAN g_sendData;
+
+#define STEERING_CENTER 0.55
+#define STEERING_GRADIANS_PER_DEGREE ((0.55 - 0.2) / 20.0)
+#define STEERING_MAX 25
+#define STEERING_MIN (-25)
+
+#define MIN_RADIUS (914.4/2.0)
 
 volatile int colorIndex = 0;
 BYTE colors[7] = { RED, GREEN, BLUE, CYAN, MAGENTA, YELLOW, WHITE };
@@ -31,119 +41,10 @@ volatile BOOLEAN LED1RunningFlag = TRUE;
 
 volatile unsigned long MillisecondCounter = 0;
 
-//  I/O interrupt pin setup
-//
-// DIR     SEL0/SEL1    IE    IES     Port Mode
-//  0          00        0     0       Input, rising edge trigger
-//  0          00        0     1       Input, falling edge trigger, interrupt
-//  0          00        1     0       Input, rising edge trigger, interrupt
-//  0          00        1     1       Input, falling edge trigger, interrupt
-//
-
-void Switch1_Interrupt_Init(void) {
-    // disable interrupts
-    DisableInterrupts();
-    // initialize the Switch as per previous lab
-    Switch1_Init();
- 
-    
-    //7-0 PxIFG RW 0h Port X interrupt flag
-    //0b = No interrupt is pending.
-    //1b = Interrupt is pending.
-    // clear flag1 (reduce possibility of extra interrupt)    
-    SWITCH_PORT->IFG &= ~(1 << SWITCH1_PIN);
-    
-
-    //7-0 PxIE RW 0h Port X interrupt enable
-    //0b = Corresponding port interrupt disabled
-    //1b = Corresponding port interrupt enabled    
-    // arm interrupt on  P1.1    
-    SWITCH_PORT->IE |= (1 << SWITCH1_PIN); // enable the interrupt
-
-    //7-0 PxIES RW Undefined Port X interrupt edge select
-    //0b = PxIFG flag is set with a low-to-high transition.
-    //1b = PxIFG flag is set with a high-to-low transition
-    // now set the pin to cause falling edge interrupt event
-    // P1.1 is falling edge event
-    SWITCH_PORT->IES |= (1 << SWITCH1_PIN); // set to falling edge
-    
-    // now set the pin to cause falling edge interrupt event
-    NVIC_IPR8 = (NVIC_IPR8 & 0x00FFFFFF)|0x40000000; // priority 2
-    
-    // enable Port 1 - interrupt 35 in NVIC    
-    NVIC_ISER1 = 0x00000008;  
-    
-    // enable interrupts  (// clear the I bit    )
-    EnableInterrupts();              
-}
-
-void Switch2_Interrupt_Init(void) {
-    // disable interrupts
-    DisableInterrupts();
-    
-    // initialize the Switch as per previous lab
-    Switch2_Init();
-    
-
-    // clear flag4 (reduce possibility of extra interrupt)
-    SWITCH_PORT->IFG &= ~(1 << SWITCH2_PIN);
-
-    // now set the pin to cause falling edge interrupt event
-    // P1.4 is falling edge event
-    SWITCH_PORT->IES |= (1 << SWITCH2_PIN); // set to falling edge
-  
-    // arm interrupt on P1.4 
-    SWITCH_PORT->IE |= (1 << SWITCH2_PIN); // enable the interrupt
-    
-    // now set the pin to cause falling edge interrupt event
-    NVIC_IPR8 = (NVIC_IPR8&0x00FFFFFF)|0x40000000; // priority 2
-    
-    // enable Port 1 - interrupt 35 in NVIC
-    NVIC_ISER1 = 0x00000008;         
-    
-    // enable interrupts  (// clear the I bit    )
-    EnableInterrupts();              
-}
-
-// PORT 1 IRQ Handler
-// LJBeato
-// Will be triggered if any pin on the port causes interrupt
-//
-// Derived From: Jonathan Valvano
-void PORT1_IRQHandler(void) {
-    char temp[48];
-
-    // First we check if it came from Switch1
-    if(SWITCH_PORT->IFG & (1 << SWITCH1_PIN)) {
-        // acknowledge P1.1 is pressed, by setting BIT1 to zero - remember P1.1 is switch 1
-        // clear interrupt flag, acknowledge
-        SWITCH_PORT->IFG &= ~(1 << SWITCH1_PIN);
-
-        // invert led running status
-        LED1RunningFlag = !LED1RunningFlag;
-    }
-
-    // Now check to see if it came from Switch2
-    if(SWITCH_PORT->IFG & (1 << SWITCH2_PIN)) {
-        // acknowledge P1.4 is pressed, by setting BIT4 to zero - remember P1.4 is switch 2
-        // clear flag4, acknowledge
-        SWITCH_PORT->IFG &= ~(1 << SWITCH2_PIN);
-        
-        // get time since this button was last pressed
-        // float numSeconds = (float)MillisecondCounter / 1000.0;
-        // sprintf(temp, "Seconds since last press: %f\r\n", numSeconds);
-        sprintf(temp, "Num millis: %lu\r\n", MillisecondCounter);
-        uart0_put(temp);
-        
-        // reset the counter
-        MillisecondCounter = 0;
-        
-        // cycle through colors on LED1
-        int currentColor = colors[colorIndex];
-        setLedValue(LED2_RED_PORT, LED2_RED_PIN, currentColor & RED);
-        setLedValue(LED2_GREEN_PORT, LED2_GREEN_PIN, currentColor & GREEN);
-        setLedValue(LED2_BLUE_PORT, LED2_BLUE_PIN, currentColor & BLUE);
-        colorIndex = (colorIndex + 1) % 7;
+void delay_ms(int del){
+    volatile int i;
+    for (i=0; i<del*50000; i++){
+        ;// Do nothing
     }
 }
 
@@ -151,13 +52,18 @@ void PORT1_IRQHandler(void) {
 // Interrupt Service Routine for Timer32-1
 //
 void Timer32_1_ISR(void) {
-    if (LED1RunningFlag) {
-        if ( getLedState(LED1_PORT, LED1_PIN) == FALSE ) {
-            setLedHigh(LED1_PORT, LED1_PIN);
-        } else {
-            setLedLow(LED1_PORT, LED1_PIN);
-        }
-    }
+}
+
+volatile double powerTarget = 0;
+volatile double currentPower = 0;
+
+#define MAX_ACCELERATION 15
+
+void INIT_Camera(void) {
+    g_sendData = FALSE;
+    ControlPin_SI_Init();
+    ControlPin_CLK_Init();
+    ADC0_InitSWTriggerCh6();
 }
 
 //
@@ -165,15 +71,43 @@ void Timer32_1_ISR(void) {
 //
 void Timer32_2_ISR(void) {
     MillisecondCounter++;
+    
+    // 1ms due to 1000Hz frequency
+    const double deltaT = 1.0/1000.0;
+    
+    // char buffer[64];
+    // sprintf(buffer, "powerTarget: %d, currentPower: %d, Time: %d\r\n", (int)(powerTarget*100), (int)(currentPower*100), MillisecondCounter);
+    // uart0_put(buffer);
+    
+    // Trapazoidal motion profile for motor power using powerTarget
+    if (powerTarget > currentPower) {
+        currentPower += MAX_ACCELERATION * deltaT;
+        if (currentPower > powerTarget) {
+            currentPower = powerTarget;
+        }
+    } else if (powerTarget < currentPower) {
+        currentPower -= MAX_ACCELERATION * deltaT;
+        if (currentPower < powerTarget) {
+            currentPower = powerTarget;
+        }
+    }
+    setMotor1Power(currentPower);
+    setMotor2Power(currentPower);
+}
+
+void setServoAngle(double angle) {
+    double position = STEERING_CENTER + angle * STEERING_GRADIANS_PER_DEGREE;
+    setServoPosition(position);
 }
 
 //
 // main
 //
 int main(void) {
-    //initializations
+    // initializations
     uart0_init();
-    uart0_put("\r\nLab5 Timer demo\r\n");
+    uart0_put("\r\n CRust \r\n");
+
     // Set the Timer32-1 to 2Hz (0.5 sec between interrupts)
     Timer32_1_Init(&Timer32_1_ISR, CalcPeriodFromFrequency(2), T32DIV1); // initialize Timer A32-1;
     
@@ -182,19 +116,71 @@ int main(void) {
     // So use DEFAULT_CLOCK_SPEED/(1/0.001) = SystemCoreClock/1000
     Timer32_2_Init(&Timer32_2_ISR, CalcPeriodFromFrequency(1000), T32DIV1); // initialize Timer A32-1;
     
-    
-    Switch1_Interrupt_Init();
-    Switch2_Interrupt_Init();
     LED1_Init();
     LED2_Init();
+    servoInit();
+    motor1Init();
+    motor2Init();
+    INIT_Camera();
     
     // turn led2 off
     setLedLow(LED2_RED_PORT, LED2_RED_PIN);
     setLedLow(LED2_GREEN_PORT, LED2_GREEN_PIN);
     setLedLow(LED2_BLUE_PORT, LED2_BLUE_PIN);
-
+    
+    setServoAngle(25);
+    powerTarget = 0;
+    
     EnableInterrupts();
+
     while(1) {
-        WaitForInterrupt();
+        // WaitForInterrupt();
+        // if (MillisecondCounter > 3000) {
+        //     // powerTarget = .26;
+        //     powerTarget = .45;
+        //     // currentPower = 0.6;
+        // }
+        if (g_sendData == TRUE) {
+            // find first and last maximum value in line array
+            int maxFirstIndex = 0;
+            int maxLastIndex = 127;
+            const int maxValue = 16383;
+            for (int i = 0; i < 128; i++) {
+                if (line[i] == maxValue) {
+                    maxFirstIndex = i;
+                    break;
+                }
+            }
+            for (int i = 127; i >= 0; i--) {
+                if (line[i] == maxValue) {
+                    maxLastIndex = i;
+                    break;
+                }
+            }
+            int middleIndex = (maxFirstIndex + maxLastIndex) / 2;
+            
+            int centerOffset = middleIndex - 64;
+            
+            // if (abs(centerOffset) > 10) {
+            //     powerTarget = 0.26;
+            // } else {
+            //     powerTarget = .4;
+            // }
+            
+            // map centerOffset to powerTarget continuously
+            powerTarget = 0.4 - (double)(abs(centerOffset)) / 64.0 * 0.2;
+            
+            // set servo target to be the angle of the maxIndex mapped from -47 to 47
+            double angle = (double)(centerOffset) / 64.0 * 47.0;
+            setServoAngle(-angle);
+            char buffer[1024];
+            // sprintf(buffer, "Middle Index: %d, Angle: %d\r\n", middleIndex, (int)angle);
+            // uart0_put(buffer);
+            // sprintf(buffer, "line data: [%d, %d, %d, %d, %d, %d, %d, %d]\r\n", line[0], line[1], line[2], line[3], line[4], line[5], line[6], line[7]);
+            // uart0_put(buffer);
+
+            
+            g_sendData = FALSE;
+        }
     }
 }

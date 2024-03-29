@@ -23,11 +23,11 @@ void setMotor1Power(double power) {
     }
     
     if (power < 0) {
-        TIMER_A0_PWM_DutyCycle(0, 1);
-        TIMER_A0_PWM_DutyCycle(-power, 2);
-    } else {
-        TIMER_A0_PWM_DutyCycle(power, 1);
+        TIMER_A0_PWM_DutyCycle(-power, 1);
         TIMER_A0_PWM_DutyCycle(0, 2);
+    } else {
+        TIMER_A0_PWM_DutyCycle(0, 1);
+        TIMER_A0_PWM_DutyCycle(power, 2);
     }
 }
 
@@ -51,10 +51,10 @@ void setMotor2Power(double power) {
     }
     
     if (power < 0) {
-        TIMER_A0_PWM_DutyCycle(0, 3);
-        TIMER_A0_PWM_DutyCycle(-power, 4);
-    } else {
-        TIMER_A0_PWM_DutyCycle(power, 3);
+        TIMER_A0_PWM_DutyCycle(-power, 3);
         TIMER_A0_PWM_DutyCycle(0, 4);
+    } else {
+        TIMER_A0_PWM_DutyCycle(0, 3);
+        TIMER_A0_PWM_DutyCycle(power, 4);
     }
 }
