@@ -118,6 +118,7 @@ int main(void) {
     
     LED1_Init();
     LED2_Init();
+    Switch1_Init();
     servoInit();
     motor1Init();
     motor2Init();
@@ -130,33 +131,51 @@ int main(void) {
     
     setServoAngle(25);
     powerTarget = 0;
+    int numFramesOffTrack = 0;
+    const int maxFramesOffTrack = 10;
+    BOOLEAN running = FALSE;
+    float P = 47.0;
+    float I = 0.0;
+    float D = 0.0;
+    
+    int lastCenterOffset = 0;
+    float integral = 0;
     
     EnableInterrupts();
 
     while(1) {
-        // WaitForInterrupt();
-        // if (MillisecondCounter > 3000) {
-        //     // powerTarget = .26;
-        //     powerTarget = .45;
-        //     // currentPower = 0.6;
-        // }
-        if (g_sendData == TRUE) {
+        if (g_sendData == TRUE && running) {
             // find first and last maximum value in line array
             int maxFirstIndex = 0;
             int maxLastIndex = 127;
             const int maxValue = 16383;
-            for (int i = 0; i < 128; i++) {
+            int i;
+            for (i = 0; i < 128; i++) {
                 if (line[i] == maxValue) {
                     maxFirstIndex = i;
+                    numFramesOffTrack = 0;
                     break;
                 }
             }
-            for (int i = 127; i >= 0; i--) {
+            if (i == 128) {
+                // no max value found
+                numFramesOffTrack++;
+            }
+            for (i = 127; i >= 0; i--) {
                 if (line[i] == maxValue) {
                     maxLastIndex = i;
+                    numFramesOffTrack = 0;
                     break;
                 }
             }
+            if (i == -1) {
+                // no max value found
+                numFramesOffTrack++;
+            }
+            if (numFramesOffTrack > maxFramesOffTrack) {
+                running = FALSE;
+            }
+
             int middleIndex = (maxFirstIndex + maxLastIndex) / 2;
             
             int centerOffset = middleIndex - 64;
@@ -171,16 +190,25 @@ int main(void) {
             powerTarget = 0.4 - (double)(abs(centerOffset)) / 64.0 * 0.2;
             
             // set servo target to be the angle of the maxIndex mapped from -47 to 47
-            double angle = (double)(centerOffset) / 64.0 * 47.0;
+            // double angle = (double)(centerOffset) / 64.0 * 47.0;
+            double angle = (double)(centerOffset / 64.0) * P + I * integral + D * (centerOffset - lastCenterOffset);
+            
+            lastCenterOffset = centerOffset;
+            integral += (double)(centerOffset/64.0);
             setServoAngle(-angle);
-            char buffer[1024];
-            // sprintf(buffer, "Middle Index: %d, Angle: %d\r\n", middleIndex, (int)angle);
-            // uart0_put(buffer);
-            // sprintf(buffer, "line data: [%d, %d, %d, %d, %d, %d, %d, %d]\r\n", line[0], line[1], line[2], line[3], line[4], line[5], line[6], line[7]);
-            // uart0_put(buffer);
-
             
             g_sendData = FALSE;
+        }
+        if (!running) {
+            powerTarget = 0;
+            currentPower = 0;
+            setServoAngle(0);
+            
+            // check if button is pressed to start car moving again
+            if (Switch1_Pressed()) {
+                running = TRUE;
+                numFramesOffTrack = 0;
+            }
         }
     }
 }
