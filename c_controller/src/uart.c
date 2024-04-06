@@ -10,6 +10,8 @@
 #include "uart.h"  // you need to create this file with the function prototypes
 #include "Common.h"  // from Lab1 code
 
+// #define BLE
+
 #define BAUD_RATE 115200      //default baud rate 
 extern uint32_t SystemCoreClock;  // clock rate of MCU
 

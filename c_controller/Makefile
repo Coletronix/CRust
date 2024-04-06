@@ -58,7 +58,7 @@ $(HEX): $(ELF)
 # Link the firmware
 $(ELF): $(OBJ)
 	@echo "Linking: $@ ..."
-	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@
+	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@ -lm
 
 # Compile C files
 .c.o:
