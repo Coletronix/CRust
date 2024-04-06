@@ -152,7 +152,6 @@ void slowAndReliable() {
 
     while(1) {
         if (g_sendData == TRUE && running) {
-            uart_put("Camera frame received\r\n");
             // find first and last maximum value in line array
             int maxFirstIndex = 0;
             int maxLastIndex = 127;
@@ -195,7 +194,7 @@ void slowAndReliable() {
             // set servo target to be the angle of the maxIndex mapped from -47 to 47
             currentAngle = PIDUpdate(&pid, centerOffset);
             
-            setServoAngle(-currentAngle * currentAngle * fabs(currentAngle)/currentAngle);
+            setServoAngle(-currentAngle);
             
             g_sendData = FALSE;
         }
@@ -229,7 +228,6 @@ void faster() {
 
     while(1) {
         if (g_sendData == TRUE && running) {
-            uart_put("Camera frame received\r\n");
             // find first and last maximum value in line array
             int maxFirstIndex = 0;
             int maxLastIndex = 127;
@@ -291,7 +289,7 @@ void faster() {
             setServoAngle(0);
             
             // check if button is pressed to start car moving again
-            if (Switch1_Pressed()) {
+            if (Switch2_Pressed()) {
                 running = TRUE;
                 numFramesOffTrack = 0;
             }
