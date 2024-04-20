@@ -301,8 +301,11 @@ void faster() {
 //
 int main(void) {
     // initializations
-    uart_init();
-    uart_put("\r\n CRust \r\n");
+    uart0_init();
+    uart2_init();
+    uart0_put("\r\n CRust \r\n");
+    uart2_put("\r\n CRust \r\n");
+    
 
     // Set the Timer32-1 to 2Hz (0.5 sec between interrupts)
     Timer32_1_Init(&Timer32_1_ISR, CalcPeriodFromFrequency(2), T32DIV1); // initialize Timer A32-1;
