@@ -8,8 +8,9 @@ typedef struct {
     float D;
     float integral;
     float lastVal;
+    float integralLimit;
 } PID;
 
-float PIDUpdate(PID* pid, float error);
+float PIDUpdate(PID* pid, float error, float dt);
 
 #endif

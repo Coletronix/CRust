@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "msp.h"
 #include "uart.h"
 #include "switches.h"
@@ -10,71 +11,47 @@
 #include "ControlPins.h"
 #include "ADC14.h"
 #include "pid.h"
+#include "oled.h"
+#include "offsetCalc.h"
+#include <math.h>
 
 extern uint32_t SystemCoreClock;
 extern uint16_t line[128];
 extern BOOLEAN g_sendData;
+extern unsigned char OLED_clr_data[1024];
+extern unsigned char OLED_TEXT_ARR[1024];
+extern unsigned char OLED_GRAPH_ARR[1024];
 
 // 1 second
-#define MAX_FRAMES_OFF_TRACK (133)
+#define MAX_FRAMES_OFF_TRACK (50)
 // from ControlPins.c
-#define UPDATE_DT (0.0075) 
+#define UPDATE_DT (1.0/50.0) 
 
-volatile uint32_t MillisecondCoutner = 0;
-
-BOOLEAN getCameraDataAvailable() {
-    if (g_sendData == TRUE) {
-        g_sendData = FALSE;
-        return TRUE;
-    }
-    return FALSE;
-}
-
-float getTrackCenterOffset(BOOLEAN* noTrack) {
-    noTrack = FALSE;
-    // find first and last maximum value in line array
-    int maxFirstIndex = 0;
-    int maxLastIndex = 127;
-    const int maxValue = 16383;
-    int i;
-    for (i = 0; i < 128; i++) {
-        if (line[i] == maxValue) {
-            maxFirstIndex = i;
-            break;
-        }
-    }
-    if (i == 128) {
-        *noTrack = TRUE;
-        return 0;
-    }
-    for (i = 127; i >= 0; i--) {
-        if (line[i] == maxValue) {
-            maxLastIndex = i;
-            break;
-        }
-    }
-    int middleIndex = (maxFirstIndex + maxLastIndex) / 2;
-    float centerOffset = (middleIndex - 64)/64.0;
-    return centerOffset;
-}
+volatile uint32_t MillisecondCounter1 = 0;
 
 void Timer32_2_ISR_1(void) {
-    MillisecondCoutner++;
+    MillisecondCounter1++;
 }
 
 void slow() {
     Timer32_2_Init(&Timer32_2_ISR_1, CalcPeriodFromFrequency(1000), T32DIV1); // initialize Timer A32-1;
 
-    int numFramesOffTrack = 0;
-    BOOLEAN running = TRUE;
-    
-    float robotSpeed = .3;
-    
+    const float diff = 0.003;
+    const float straightToTurnCutoff = 15;
+    const float turnToStraightCutoff = 7.5;
+    const int framesToTurn = 10;
 
-    // pid struct
-    // PID pid = {57.0, 0.1, 0.0, 0, 0};
-    PID pid = {47, 0, 0, 0, 0};
+    BOOLEAN running = TRUE;
+    int numFramesOffTrack = 0;
+    float robotSpeed = .3;
+    BOOLEAN turning = FALSE;
     
+    int straightCounter = 0;
+    int turnCounter = 0;
+    
+    PID straightPID = {50.0, 0.0, 10000.0, 0, 0, 10.0};
+    PID turnPID = {57.0, 0.0, 0.0, 0, 0, 10.0};
+
     setMotor1Power(robotSpeed);
     setMotor2Power(robotSpeed);
     while (running) {
@@ -89,9 +66,42 @@ void slow() {
             if (numFramesOffTrack > MAX_FRAMES_OFF_TRACK) {
                 running = FALSE;
             }
-            float correction = PIDUpdate(&pid, centerOffset);
-            // apply steering
-            setServoAngle(correction);
+            
+            float correction = 0;
+            if (turning) {
+                setLedHigh(LED2_BLUE_PORT, LED2_BLUE_PIN);
+                straightCounter = 0;
+
+                correction = PIDUpdate(&turnPID, centerOffset, UPDATE_DT);
+                
+                if (fabs(correction) < turnToStraightCutoff && turnCounter > framesToTurn) {
+                    turning = FALSE;
+                }
+
+                setServoAngle(-correction);
+                setMotor1Power(robotSpeed + diff * correction);
+                setMotor2Power(robotSpeed - diff * correction);
+                
+                turnCounter++;
+            } else { // straight
+                setLedLow(LED2_BLUE_PORT, LED2_BLUE_PIN);
+                turnCounter = 0;
+                
+                correction = PIDUpdate(&straightPID, centerOffset, UPDATE_DT);
+                
+                if (fabs(correction) > straightToTurnCutoff && straightCounter > framesToTurn) {
+                    turning = TRUE;
+                }
+                
+                setServoAngle(-correction);
+                setMotor1Power(robotSpeed);
+                setMotor2Power(robotSpeed);
+                
+                straightCounter++;
+            }
         }
     }
+    
+    setMotor1Power(0);
+    setMotor2Power(0);
 }

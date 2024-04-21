@@ -23,6 +23,7 @@
 #include "ControlPins.h"
 #include "ADC14.h"
 #include "pid.h"
+#include "oled.h"
 #include "drivingAlgos.h"
 
 extern BOOLEAN g_sendData;
@@ -131,6 +132,7 @@ int main(void) {
     setLedLow(LED2_BLUE_PORT, LED2_BLUE_PIN);
     
     
+    
     // wait until a button is pressed, and run the corresponding program
     while(1) {
         if (Switch1_Pressed()) {
@@ -146,5 +148,6 @@ int main(void) {
         setLedLow(LED2_BLUE_PORT, LED2_BLUE_PIN);
         setMotor1Power(0);
         setMotor2Power(0);
+        setServoAngle(0);
     }
 }
