@@ -5,4 +5,6 @@ void servoInit();
 
 void setServoPosition(double position);
 
+void setServoAngle(double angle);
+
 #endif /* SERVOMOTOR_H_ */

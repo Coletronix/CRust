@@ -1,6 +1,11 @@
 #include "TimerA.h"
 #include "msp.h"
 
+#define STEERING_CENTER 0.55
+#define STEERING_GRADIANS_PER_DEGREE ((0.55 - 0.2) / 20.0)
+#define STEERING_MAX 25
+#define STEERING_MIN (-25)
+
 #define MIN_DUTY_CYCLE 0.05
 #define MAX_DUTY_CYCLE 0.1
 #define SERVO_FREQ 50
@@ -20,4 +25,9 @@ void setServoPosition(double position) {
     double dutyCycle = MIN_DUTY_CYCLE + position * (MAX_DUTY_CYCLE - MIN_DUTY_CYCLE);
     
     TIMER_A2_PWM_DutyCycle(dutyCycle, 1);
+}
+
+void setServoAngle(double angle) {
+    double position = STEERING_CENTER + angle * STEERING_GRADIANS_PER_DEGREE;
+    setServoPosition(position);
 }

@@ -16,6 +16,7 @@ BOOLEAN g_sendData;
 // default SI integration time is 7.5ms = 133Hz
 // SI integration time of 20ms = 50Hz
 #define INTEGRATION_TIME .02f
+// #define INTEGRATION_TIME .0075f
 
 
 
