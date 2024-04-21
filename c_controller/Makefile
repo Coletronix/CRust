@@ -13,7 +13,7 @@
 .SILENT:
 
 USRSRC = src/main.c
-LABSRCS  = src/uart.c src/leds.c src/switches.c src/Timer32.c src/CortexM.c src/ADC14.c src/ServoMotor.c src/TimerA.c src/Motors.c src/ControlPins.c src/SysTickTimer.c
+LABSRCS  = src/uart.c src/leds.c src/switches.c src/Timer32.c src/CortexM.c src/ADC14.c src/ServoMotor.c src/TimerA.c src/Motors.c src/ControlPins.c src/SysTickTimer.c src/slow.c src/fast.c src/pid.c
 
 ###############################################################################
 # MSP432 GCC Support Files

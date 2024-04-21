@@ -11,21 +11,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "msp.h"
-#include "uart.h"
-#include "switches.h"
-#include "leds.h"
-#include "Timer32.h"
-#include "CortexM.h"
-#include "Common.h"
-#include "Motors.h"
-#include "ServoMotor.h"
-#include "ControlPins.h"
-#include "ADC14.h"
-
-extern uint32_t SystemCoreClock;
-extern uint16_t line[128];
-extern BOOLEAN g_sendData;
+#include "drivingAlgos.h"
 
 #define STEERING_CENTER 0.55
 #define STEERING_GRADIANS_PER_DEGREE ((0.55 - 0.2) / 20.0)
@@ -146,7 +132,7 @@ void slowAndReliable() {
     BOOLEAN running = FALSE;
     // pid struct
     // PID pid = {57.0, 0.1, 0.0, 0, 0};
-    PID pid = {25.0, 0.1, 0.0, 0, 0};
+    PID pid = {47, 0, 0, 0, 0};
     
     EnableInterrupts();
 
@@ -189,7 +175,7 @@ void slowAndReliable() {
             
             // map centerOffset to powerTarget continuously
             // powerTarget = fmin(0.5, fmax(0.25, 1/(10.0*fabs(centerOffset)+2.3)));
-            powerTarget = 0.25;
+            powerTarget = 0.3;
             
             // set servo target to be the angle of the maxIndex mapped from -47 to 47
             currentAngle = PIDUpdate(&pid, centerOffset);
@@ -219,8 +205,7 @@ void faster() {
     BOOLEAN running = FALSE;
     // pid struct
     // PID pid = {57.0, 0.1, 0.0, 0, 0};
-    PID pid = {10.0, 0.1, 0.0, 0, 0};
-    powerTarget = 1;
+    PID pid = {100, 0.0, 100.0, 0, 0};
     
     unsigned long startTime = MillisecondCounter;
     
@@ -256,7 +241,7 @@ void faster() {
                 numFramesOffTrack++;
             }
             if (numFramesOffTrack > maxFramesOffTrack) {
-                // running = FALSE;
+                running = FALSE;
             }
 
             int middleIndex = (maxFirstIndex + maxLastIndex) / 2;
@@ -266,15 +251,7 @@ void faster() {
             // map centerOffset to powerTarget continuously
             // powerTarget = fmin(0.5, fmax(0.25, 1/(10.0*fabs(centerOffset)+2.3)));
             
-            // if (fabs(centerOffset) > 0.9) {
-            //     powerTarget = 0;
-            // }
-            if (MillisecondCounter - startTime < 1000) {
-                powerTarget = 1;
-            } else {
-                powerTarget = 0;
-            }
-            
+            powerTarget = 0.4;
             
             // set servo target to be the angle of the maxIndex mapped from -47 to 47
             currentAngle = PIDUpdate(&pid, centerOffset);
@@ -289,7 +266,7 @@ void faster() {
             setServoAngle(0);
             
             // check if button is pressed to start car moving again
-            if (Switch2_Pressed()) {
+            if (Switch1_Pressed()) {
                 running = TRUE;
                 numFramesOffTrack = 0;
             }
@@ -304,9 +281,6 @@ int main(void) {
     uart_init();
     uart_put("\r\n CRust \r\n");
 
-    // Set the Timer32-1 to 2Hz (0.5 sec between interrupts)
-    Timer32_1_Init(&Timer32_1_ISR, CalcPeriodFromFrequency(2), T32DIV1); // initialize Timer A32-1;
-    
     
     // Setup Timer32-2 with a .001 second timeout.
     // So use DEFAULT_CLOCK_SPEED/(1/0.001) = SystemCoreClock/1000
@@ -330,9 +304,9 @@ int main(void) {
     while(1) {
         if (Switch1_Pressed()) {
             slowAndReliable();
+            // faster();
         }
         if (Switch2_Pressed()) {
-            faster();
         }
     }
 }
