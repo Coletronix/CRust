@@ -36,11 +36,7 @@ void Timer32_2_ISR_2(void) {
 void fast() {
     Timer32_2_Init(&Timer32_2_ISR_2, CalcPeriodFromFrequency(1000), T32DIV1); // initialize Timer A32-1;
 
-    const float diff = 0.003;
-    const float straightToTurnCutoff = 15;
-    const float turnToStraightCutoff = 7.5;
-    const int framesToTurn = 5;
-    const int minFastFramesNeededForSlowdown = 50;
+    const float diff = 0.006;
     
     float motor1Power = 0.0;
     float motor2Power = 0.0;
@@ -48,7 +44,75 @@ void fast() {
     BOOLEAN running = TRUE;
     int numFramesOffTrack = 0;
     float fastSpeed = .4;
-    float slowSpeed = .3;
+    float lastCorrection = 0;
+    
+    int straightCounter = 0;
+    
+    PID straightPID = {54.0, 0.0, 10000.0, 0, 0, 10.0};
+
+    motor1Power = fastSpeed;
+    motor2Power = fastSpeed;
+    while (running) {
+        if (getCameraDataAvailable()) {
+            BOOLEAN noTrack;
+            float centerOffset = getTrackCenterOffset(&noTrack);
+            if (noTrack) {
+                numFramesOffTrack++;
+            } else {
+                numFramesOffTrack = 0;
+            }
+            if (numFramesOffTrack > MAX_FRAMES_OFF_TRACK) {
+                running = FALSE;
+            }
+            
+            setLedLow(LED2_BLUE_PORT, LED2_BLUE_PIN);
+            
+            float correction = PIDUpdate(&straightPID, centerOffset, UPDATE_DT);
+            
+            // float speed = .45 + fabs(correction) * (-.3-.45)/64.0;
+            float speed = .45 + fabs(centerOffset) * (-.15-.45);
+            // float speed = fmin(fabs(.5*correction), .45);
+            
+            motor1Power = speed + diff * correction;
+            motor2Power = speed - diff * correction;
+
+            straightCounter++;
+            
+            if (noTrack) {
+                setServoAngle(-lastCorrection);
+            } else {
+                setServoAngle(-correction);
+                lastCorrection = correction;
+            }
+            setMotor1Power(motor1Power);
+            setMotor2Power(motor2Power);
+        }
+    }
+    
+    setMotor1Power(0);
+    setMotor2Power(0);
+}
+
+void fast_1() {
+    Timer32_2_Init(&Timer32_2_ISR_2, CalcPeriodFromFrequency(1000), T32DIV1); // initialize Timer A32-1;
+
+    const float diff = 0.003;
+    const float straightToTurnCutoff = 15;
+    const float turnToStraightCutoff = 7.5;
+    const int framesToTurn = 5;
+    const int minFastFramesNeededForSlowdown = 50;
+    
+    uint32_t frameCounter = 0;
+    
+    uint32_t straightStartTime = 0;
+    
+    float motor1Power = 0.0;
+    float motor2Power = 0.0;
+
+    BOOLEAN running = TRUE;
+    int numFramesOffTrack = 0;
+    float fastSpeed = .4;
+    float slowSpeed = .25;
     BOOLEAN turning = FALSE;
     
     BOOLEAN specialSlowdown = FALSE;
@@ -85,6 +149,7 @@ void fast() {
                 
                 if (fabs(correction) < turnToStraightCutoff && turnCounter > framesToTurn) {
                     turning = FALSE;
+                    straightStartTime = frameCounter;
                 }
 
                 setServoAngle(-correction);
@@ -103,6 +168,11 @@ void fast() {
                     turning = TRUE;
                     if (straightCounter > minFastFramesNeededForSlowdown) {
                         specialSlowdown = TRUE;
+                        
+                        uint32_t timeStraight = frameCounter - straightStartTime;
+                        
+                        // Calculate how long to slow down for
+                        maxSpecialSlowdownCounter = 90.0/(1+pow(2.71828, -timeStraight/20.0));
                     }
                 }
                 
@@ -125,6 +195,8 @@ void fast() {
             
             setMotor1Power(motor1Power);
             setMotor2Power(motor2Power);
+
+            frameCounter++;
         }
     }
     

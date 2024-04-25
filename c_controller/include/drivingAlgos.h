@@ -1,7 +1,8 @@
 #ifndef DRIVINGALGOS_H
 #define DRIVINGALGOS_H
 
-void fast();
 void slow();
+void fast();
+void fastest();
 
 #endif

@@ -110,6 +110,13 @@ void INIT_Camera(void) {
 //         }
 //     }
 // }
+ 
+volatile uint32_t MillisecondCounter = 0;
+
+void Timer32_2_ISR_Main(void) {
+    MillisecondCounter++;
+}
+
 //
 // main
 //
@@ -117,6 +124,10 @@ int main(void) {
     // initializations
     uart_init();
     uart_put("\r\n CRust \r\n");
+    
+    // init timer for millisecond counter
+    Timer32_2_Init(&Timer32_2_ISR_Main, CalcPeriodFromFrequency(1000), T32DIV1); // initialize Timer A32-1;
+    EnableInterrupts();
     
     LED1_Init();
     LED2_Init();
@@ -131,21 +142,80 @@ int main(void) {
     setLedLow(LED2_GREEN_PORT, LED2_GREEN_PIN);
     setLedLow(LED2_BLUE_PORT, LED2_BLUE_PIN);
     
+    // turn led1 off
+    setLedLow(LED1_PORT, LED1_PIN);
     
+    int selectedSpeedMode = 0;
+    
+    int previouslyPressed = 0;
+    
+    const triggerSwitchTime = 2000;
+    int startSwitchTime = 0;
+    BOOLEAN startSwitchTiming = FALSE;
     
     // wait until a button is pressed, and run the corresponding program
     while(1) {
-        if (Switch1_Pressed()) {
-            setLedHigh(LED2_RED_PORT, LED2_RED_PIN);
-            slow();
+        // if (Switch1_Pressed()) {
+        //     setLedHigh(LED2_RED_PORT, LED2_RED_PIN);
+        //     slow();
+        // }
+        // if (Switch2_Pressed()) {
+        //     setLedHigh(LED2_GREEN_PORT, LED2_GREEN_PIN);
+        //     fast();
+        // }
+        
+        if (Switch2_Pressed() && previouslyPressed == 0) {
+            selectedSpeedMode = (selectedSpeedMode + 1) % 3;
+            startSwitchTime = MillisecondCounter;
+            startSwitchTiming = TRUE;
         }
-        if (Switch2_Pressed()) {
-            setLedHigh(LED2_GREEN_PORT, LED2_GREEN_PIN);
-            fast();
+        
+        previouslyPressed = Switch2_Pressed();
+        
+        switch (selectedSpeedMode) {
+            case 0:
+                setLedHigh(LED2_RED_PORT, LED2_RED_PIN);
+                setLedLow(LED2_GREEN_PORT, LED2_GREEN_PIN);
+                setLedLow(LED2_BLUE_PORT, LED2_BLUE_PIN);
+                break;
+            case 1:
+                setLedLow(LED2_RED_PORT, LED2_RED_PIN);
+                setLedHigh(LED2_GREEN_PORT, LED2_GREEN_PIN);
+                setLedLow(LED2_BLUE_PORT, LED2_BLUE_PIN);
+                break;
+            case 2:
+                setLedLow(LED2_RED_PORT, LED2_RED_PIN);
+                setLedLow(LED2_GREEN_PORT, LED2_GREEN_PIN);
+                setLedHigh(LED2_BLUE_PORT, LED2_BLUE_PIN);
+                break;
         }
-        setLedLow(LED2_RED_PORT, LED2_RED_PIN);
-        setLedLow(LED2_GREEN_PORT, LED2_GREEN_PIN);
-        setLedLow(LED2_BLUE_PORT, LED2_BLUE_PIN);
+        
+        uint32_t diff = MillisecondCounter - startSwitchTime;
+        
+        if (startSwitchTiming && diff > triggerSwitchTime/2) {
+            setLedHigh(LED1_PORT, LED1_PIN);
+        } else {
+            setLedLow(LED1_PORT, LED1_PIN);
+        }
+        
+        if (startSwitchTiming && diff > triggerSwitchTime) {
+            startSwitchTiming = FALSE;
+            switch (selectedSpeedMode) {
+                case 0:
+                    slow();
+                    break;
+                case 1:
+                    fast();
+                    break;
+                case 2:
+                    fastest();
+                    break;
+            }
+        }
+        
+        // setLedLow(LED2_RED_PORT, LED2_RED_PIN);
+        // setLedLow(LED2_GREEN_PORT, LED2_GREEN_PIN);
+        // setLedLow(LED2_BLUE_PORT, LED2_BLUE_PIN);
         setMotor1Power(0);
         setMotor2Power(0);
         setServoAngle(0);
