@@ -165,7 +165,7 @@ int main(void) {
         // }
         
         if (Switch2_Pressed() && previouslyPressed == 0) {
-            selectedSpeedMode = (selectedSpeedMode + 1) % 3;
+            selectedSpeedMode = (selectedSpeedMode + 1) % 4;
             startSwitchTime = MillisecondCounter;
             startSwitchTiming = TRUE;
         }
@@ -188,6 +188,11 @@ int main(void) {
                 setLedLow(LED2_GREEN_PORT, LED2_GREEN_PIN);
                 setLedHigh(LED2_BLUE_PORT, LED2_BLUE_PIN);
                 break;
+            case 3:
+                setLedHigh(LED2_RED_PORT, LED2_RED_PIN);
+                setLedHigh(LED2_GREEN_PORT, LED2_GREEN_PIN);
+                setLedLow(LED2_BLUE_PORT, LED2_BLUE_PIN);
+                break;
         }
         
         uint32_t diff = MillisecondCounter - startSwitchTime;
@@ -208,6 +213,9 @@ int main(void) {
                     break;
                 case 2:
                     fastest();
+                    break;
+                case 3:
+                    fasterist();
                     break;
             }
             startSwitchTiming = FALSE;

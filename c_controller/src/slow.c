@@ -22,9 +22,10 @@ extern unsigned char OLED_clr_data[1024];
 extern unsigned char OLED_TEXT_ARR[1024];
 extern unsigned char OLED_GRAPH_ARR[1024];
 
-// 1 second
-#define MAX_FRAMES_OFF_TRACK (100)
+// 1.5 second
+#define MAX_FRAMES_OFF_TRACK (150)
 // from ControlPins.c
+// #define UPDATE_DT (1.0/50.0) 
 #define UPDATE_DT (1.0/100.0) 
 
 volatile uint32_t MillisecondCounter1 = 0;

@@ -4,5 +4,6 @@
 void slow();
 void fast();
 void fastest();
+void fasterist();
 
 #endif

@@ -34,16 +34,15 @@ extern unsigned char OLED_GRAPH_ARR[1024];
 // 1 second
 #define MAX_FRAMES_OFF_TRACK (50)
 // from ControlPins.c
-// #define UPDATE_DT (1.0/50.0) 
-#define UPDATE_DT (1.0/100.0) 
+#define UPDATE_DT (1.0/50.0) 
+// #define UPDATE_DT (1.0/100.0) 
 
 volatile uint32_t MillisecondCounter2 = 0;
 
 enum State {
     STRAIGHT,
     TURN,
-    ENTERING_TURN,
-    DECELERATING
+    ENTERING_TURN
 };
 
 struct SimulatedMotor {
@@ -158,9 +157,9 @@ void fast() {
                     // calculate total time spent accelerating
                     uint32_t timeAccelerating = endAcceleratingTime - startAcceleratingTime;
                     
-                    char buf[30];
-                    sprintf(buf, "Time accelerating: %d\r\n", timeAccelerating);
-                    uart_put(buf);
+                    // char buf[30];
+                    // sprintf(buf, "Time accelerating: %d\r\n", timeAccelerating);
+                    // uart_put(buf);
 
                     // calculate time to decelerate
                     // uint32_t timeToDecelerate = 100.0 * sqrt(sqrt((float)timeAccelerating));
@@ -208,7 +207,8 @@ void fast() {
                         numFramesStraight = 0;
                     }
                     
-                    if (numFramesStraight > 40) {
+                    // if (numFramesStraight > 40) {
+                    if (numFramesStraight > 80) {
                         state = STRAIGHT;
                         startAcceleratingTime = MillisecondCounter2;
                     }

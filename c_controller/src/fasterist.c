@@ -22,7 +22,7 @@ extern unsigned char OLED_clr_data[1024];
 extern unsigned char OLED_TEXT_ARR[1024];
 extern unsigned char OLED_GRAPH_ARR[1024];
 
-volatile uint32_t MillisecondCounter3 = 0;
+volatile uint32_t MillisecondCounter4 = 0;
 
 enum State {
     STRAIGHT,
@@ -30,47 +30,43 @@ enum State {
     ENTERING_TURN
 };
 
-// 1 second
+// 1.5 second
 #define MAX_FRAMES_OFF_TRACK (150)
 // from ControlPins.c
-#define UPDATE_DT (1.0/50.0) 
+#define UPDATE_DT (1.0/100.0) // this is wrong...
 
 // meters
 #define WHEEL_BASE (5.5 * 0.0254)
 
-float wheelSpeedFromCenterSpeedAndTurningRadius(float centerSpeed, float turningRadius) {
-    return centerSpeed * (1 + WHEEL_BASE / turningRadius);
+void Timer32_2_ISR_4(void) {
+    MillisecondCounter4++;
 }
 
-void Timer32_2_ISR_3(void) {
-    MillisecondCounter3++;
-}
-
-void fastest() {
-    Timer32_2_Init(&Timer32_2_ISR_3, CalcPeriodFromFrequency(1000), T32DIV1); // initialize Timer A32-1;
+void fasterist() {
+    Timer32_2_Init(&Timer32_2_ISR_4, CalcPeriodFromFrequency(1000), T32DIV1); // initialize Timer A32-1;
     
     float motor1Power = 0.0;
     float motor2Power = 0.0;
 
     BOOLEAN running = TRUE;
     int numFramesOffTrack = 0;
-    float fastSpeed = .47;
+    float fastSpeed = .55;
     float turnSpeed = .33;
     float lastCorrection = 0;
     
     float numFramesStraight = 0;
 
-    uint32_t startAcceleratingTime = MillisecondCounter3;
+    uint32_t startAcceleratingTime = MillisecondCounter4;
     uint32_t endAcceleratingTime = startAcceleratingTime;
     uint32_t startDeceleratingTime = startAcceleratingTime;
-    uint32_t startTurnTime = MillisecondCounter3;
+    uint32_t startTurnTime = MillisecondCounter4;
     
     BOOLEAN firstEnteredDecel = FALSE;
     
     enum State state = STRAIGHT;
     
-    PID turnPID = {57.0, 0.0, 0.0, 0, 0, 10.0};
-    PID straightPID = {30.0, 0.0, 1000.0, 0, 0, 10.0};
+    PID turnPID = {57.0, 0.0, 100000.0, 0, 0, 10.0};
+    PID straightPID = {30.0, 0.0, 10000.0, 0, 0, 10.0};
 
     motor1Power = fastSpeed;
     motor2Power = fastSpeed;
@@ -108,7 +104,7 @@ void fastest() {
                     
                     correction = PIDUpdate(&straightPID, centerOffset, UPDATE_DT);
                     
-                    float timeStraight = (float)(MillisecondCounter3 - startAcceleratingTime);
+                    float timeStraight = (float)(MillisecondCounter4 - startAcceleratingTime);
                     
                     // speed = (1.0 - fastSpeed) * exp(-0.006 * timeStraight) + fastSpeed;
                     speed = (1.0 - fastSpeed) * exp(-0.0051 * timeStraight) + fastSpeed;
@@ -129,8 +125,8 @@ void fastest() {
                     // state change case
                     if (fabs(centerOffset) > .24) {
                         state = ENTERING_TURN;
-                        endAcceleratingTime = MillisecondCounter3;
-                        startDeceleratingTime = MillisecondCounter3;
+                        endAcceleratingTime = MillisecondCounter4;
+                        startDeceleratingTime = MillisecondCounter4;
                     }
                     
                     // uart_put("In Straight mode");
@@ -172,9 +168,9 @@ void fastest() {
 
                     // uart_put("In Straight mode");
                     
-                    if (MillisecondCounter3 - startDeceleratingTime > timeToDecelerate) {
+                    if (MillisecondCounter4 - startDeceleratingTime > timeToDecelerate) {
                         state = TURN;
-                        startTurnTime = MillisecondCounter3;
+                        startTurnTime = MillisecondCounter4;
                     }
                     
                     break;
@@ -187,7 +183,7 @@ void fastest() {
                     correction = PIDUpdate(&turnPID, centerOffset, UPDATE_DT);
                     diff = 0.003;
                     
-                    float turnTime = (float)(MillisecondCounter3 - startTurnTime);
+                    float turnTime = (float)(MillisecondCounter4 - startTurnTime);
                     
                     speed = (1.0 - turnSpeed) * exp(-0.04 * turnTime) + turnSpeed;
 
@@ -202,7 +198,7 @@ void fastest() {
                     
                     if (numFramesStraight > 40) {
                         state = STRAIGHT;
-                        startAcceleratingTime = MillisecondCounter3;
+                        startAcceleratingTime = MillisecondCounter4;
                     }
                     
                     // when to switch to straight
