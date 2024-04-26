@@ -43,6 +43,7 @@ enum State {
     STRAIGHT,
     TURN,
     ENTERING_TURN,
+    DECELERATING
 };
 
 struct SimulatedMotor {
@@ -73,16 +74,22 @@ void fast() {
 
     BOOLEAN running = TRUE;
     int numFramesOffTrack = 0;
-    float fastSpeed = .4;
+    float fastSpeed = .47;
     float turnSpeed = .33;
     float lastCorrection = 0;
     
     float numFramesStraight = 0;
+
+    uint32_t startAcceleratingTime = MillisecondCounter2;
+    uint32_t endAcceleratingTime = startAcceleratingTime;
+    uint32_t startDeceleratingTime = startAcceleratingTime;
+    
+    BOOLEAN firstEnteredDecel = FALSE;
     
     enum State state = STRAIGHT;
     
     PID turnPID = {57.0, 0.0, 0.0, 0, 0, 10.0};
-    PID straightPID = {50.0, 0.0, 10000.0, 0, 0, 10.0};
+    PID straightPID = {30.0, 0.0, 1000.0, 0, 0, 10.0};
 
     motor1Power = fastSpeed;
     motor2Power = fastSpeed;
@@ -95,30 +102,118 @@ void fast() {
             } else {
                 numFramesOffTrack = 0;
             }
-            // if (numFramesOffTrack > MAX_FRAMES_OFF_TRACK) {
-            //     running = FALSE;
+            if (numFramesOffTrack > MAX_FRAMES_OFF_TRACK) {
+                running = FALSE;
+            }
+            
+            // loop through and print out all line data
+            // for (int i = 0; i < 128; i++) {
+            //     char buf[512];
+            //     sprintf(buf, "%d ", line[i]);
+            //     uart_put(buf);
             // }
+            // uart_put("\r\n");
+            
+            // continue;
             
             float correction;
+            float diff;
             switch (state) {
                 case STRAIGHT:
+                    setLedLow(LED2_RED_PORT, LED2_RED_PIN);
+                    setLedHigh(LED2_GREEN_PORT, LED2_GREEN_PIN);
+                    setLedLow(LED2_BLUE_PORT, LED2_BLUE_PIN);
+                    
+                    correction = PIDUpdate(&straightPID, centerOffset, UPDATE_DT);
+
+                    motor1Power = fastSpeed;
+                    motor2Power = fastSpeed;
+                    
+                    
+                    if (noTrack) {
+                        setServoAngle(-lastCorrection);
+                    } else {
+                        setServoAngle(-correction);
+                        lastCorrection = correction;
+                    }
+                    setMotor1Power(motor1Power);
+                    setMotor2Power(motor2Power);
+                    
+                    // state change case
+                    if (fabs(centerOffset) > .24) {
+                        state = ENTERING_TURN;
+                        endAcceleratingTime = MillisecondCounter2;
+                        startDeceleratingTime = MillisecondCounter2;
+                    }
+                    
+                    // uart_put("In Straight mode");
+                    
+                    break;
+                    
+                case ENTERING_TURN:
+                    setLedHigh(LED2_RED_PORT, LED2_RED_PIN);
+                    setLedLow(LED2_GREEN_PORT, LED2_GREEN_PIN);
+                    setLedLow(LED2_BLUE_PORT, LED2_BLUE_PIN);
+                    
+                    // calculate total time spent accelerating
+                    uint32_t timeAccelerating = endAcceleratingTime - startAcceleratingTime;
+                    
+                    char buf[30];
+                    sprintf(buf, "Time accelerating: %d\r\n", timeAccelerating);
+                    uart_put(buf);
+
+                    // calculate time to decelerate
+                    // uint32_t timeToDecelerate = 100.0 * sqrt(sqrt((float)timeAccelerating));
+                    // uint32_t timeToDecelerate = -500*exp(-0.001 * (float)timeAccelerating) + 500;
+                    // uint32_t timeToDecelerate = 500.0 / (1 + exp(-.01 * (timeAccelerating - 500)));
+                    // uint32_t timeToDecelerate = 500.0 / (1 + exp(-.003 * (timeAccelerating - 700)));
+                    uint32_t timeToDecelerate = 0.26 * timeAccelerating;
+                    // uint32_t timeToDecelerate = 500;
+                    float decelAmt = -.2;
+
+                    correction = PIDUpdate(&turnPID, centerOffset, UPDATE_DT);
+                    
+                    if (noTrack) {
+                        setServoAngle(-lastCorrection);
+                    } else {
+                        setServoAngle(-correction);
+                        lastCorrection = correction;
+                    }
+                    
+                    setMotor1Power(decelAmt);
+                    setMotor2Power(decelAmt);
+
+                    // uart_put("In Straight mode");
+                    
+                    if (MillisecondCounter2 - startDeceleratingTime > timeToDecelerate) {
+                        state = TURN;
+                    }
+                    
+                    break;
+                
+                case TURN:
+                    setLedLow(LED2_RED_PORT, LED2_RED_PIN);
+                    setLedLow(LED2_GREEN_PORT, LED2_GREEN_PIN);
                     setLedHigh(LED2_BLUE_PORT, LED2_BLUE_PIN);
                     
                     correction = PIDUpdate(&turnPID, centerOffset, UPDATE_DT);
-                    float diff = 0.003;
-                    
+                    diff = 0.003;
+
                     motor1Power = turnSpeed + diff * correction;
                     motor2Power = turnSpeed - diff * correction;
                     
-                    if (fabs(centerOffset) < .1) {
+                    if (fabs(centerOffset) < .2) {
                         numFramesStraight++;
                     } else {
                         numFramesStraight = 0;
                     }
                     
-                    // if (numFramesStraight > 25) {
-                    //     running = FALSE;
-                    // }
+                    if (numFramesStraight > 40) {
+                        state = STRAIGHT;
+                        startAcceleratingTime = MillisecondCounter2;
+                    }
+                    
+                    // when to switch to straight
                     
                     if (noTrack) {
                         setServoAngle(-lastCorrection);
@@ -130,15 +225,15 @@ void fast() {
                     setMotor2Power(motor2Power);
                     break;
             }
-            uart_put("centerOffset: ");
-            sendFloatBLE(centerOffset);
-            uart_put(" correction: ");
-            sendFloatBLE(correction);
-            uart_put(" motor1Power: ");
-            sendFloatBLE(motor1Power);
-            uart_put(" motor2Power: ");
-            sendFloatBLE(motor2Power);
-            uart_put("\r\n");
+            // uart_put("centerOffset: ");
+            // sendFloatBLE(centerOffset);
+            // uart_put(" correction: ");
+            // sendFloatBLE(correction);
+            // uart_put(" motor1Power: ");
+            // sendFloatBLE(motor1Power);
+            // uart_put(" motor2Power: ");
+            // sendFloatBLE(motor2Power);
+            // uart_put("\r\n");
         }
     }
     

@@ -32,7 +32,9 @@ float getTrackCenterOffset(BOOLEAN* noTrack) {
     int maxFirstIndex = 0;
     int maxLastIndex = 127;
     // const int threshVal = 16383;
-    const int threshVal = 8000;
+    // const int threshVal = 3000;
+    // const int threshVal = 8000;
+    const int threshVal = 5500;
     int i;
     for (i = 0; i < 128; i++) {
         if (line[i] >= threshVal) {
