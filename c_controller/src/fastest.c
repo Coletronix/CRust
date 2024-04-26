@@ -22,12 +22,19 @@ extern unsigned char OLED_clr_data[1024];
 extern unsigned char OLED_TEXT_ARR[1024];
 extern unsigned char OLED_GRAPH_ARR[1024];
 
+volatile uint32_t MillisecondCounter3 = 0;
+
 // 1 second
 #define MAX_FRAMES_OFF_TRACK (50)
 // from ControlPins.c
 #define UPDATE_DT (1.0/50.0) 
 
-volatile uint32_t MillisecondCounter3 = 0;
+// meters
+#define WHEEL_BASE (5.5 * 0.0254)
+
+float wheelSpeedFromCenterSpeedAndTurningRadius(float centerSpeed, float turningRadius) {
+    return centerSpeed * (1 + WHEEL_BASE / turningRadius);
+}
 
 void Timer32_2_ISR_3(void) {
     MillisecondCounter3++;
@@ -43,7 +50,7 @@ void fastest() {
 
     BOOLEAN running = TRUE;
     int numFramesOffTrack = 0;
-    float fastSpeed = .6;
+    float fastSpeed = .4;
     float lastCorrection = 0;
     
     int straightCounter = 0;
@@ -70,7 +77,7 @@ void fastest() {
             float correction = PIDUpdate(&frontPID, centerOffset, UPDATE_DT);
             
             // float speed = .45 + fabs(correction) * (-.3-.45)/64.0;
-            float speed = fastSpeed + fabs(centerOffset) * (-.5-fastSpeed);
+            float speed = fastSpeed + fabs(centerOffset) * (-.3-fastSpeed);
             // float speed = fmin(fabs(.5*correction), .45);
             
             motor1Power = speed + diff * correction;

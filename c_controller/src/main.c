@@ -149,7 +149,7 @@ int main(void) {
     
     int previouslyPressed = 0;
     
-    const triggerSwitchTime = 2000;
+    const uint32_t triggerSwitchTime = 2000;
     int startSwitchTime = 0;
     BOOLEAN startSwitchTiming = FALSE;
     
@@ -199,7 +199,6 @@ int main(void) {
         }
         
         if (startSwitchTiming && diff > triggerSwitchTime) {
-            startSwitchTiming = FALSE;
             switch (selectedSpeedMode) {
                 case 0:
                     slow();
@@ -211,6 +210,9 @@ int main(void) {
                     fastest();
                     break;
             }
+            startSwitchTiming = FALSE;
+            startSwitchTime = 0;
+            Timer32_2_Init(&Timer32_2_ISR_Main, CalcPeriodFromFrequency(1000), T32DIV1); // initialize Timer A32-1;
         }
         
         // setLedLow(LED2_RED_PORT, LED2_RED_PIN);

@@ -23,9 +23,9 @@ extern unsigned char OLED_TEXT_ARR[1024];
 extern unsigned char OLED_GRAPH_ARR[1024];
 
 // 1 second
-#define MAX_FRAMES_OFF_TRACK (50)
+#define MAX_FRAMES_OFF_TRACK (100)
 // from ControlPins.c
-#define UPDATE_DT (1.0/50.0) 
+#define UPDATE_DT (1.0/100.0) 
 
 volatile uint32_t MillisecondCounter1 = 0;
 
@@ -39,7 +39,7 @@ void slow() {
     const float diff = 0.003;
     const float straightToTurnCutoff = 15;
     const float turnToStraightCutoff = 7.5;
-    const int framesToTurn = 10;
+    const int framesToTurn = 20;
 
     BOOLEAN running = TRUE;
     int numFramesOffTrack = 0;

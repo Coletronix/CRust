@@ -31,10 +31,11 @@ float getTrackCenterOffset(BOOLEAN* noTrack) {
     // find first and last maximum value in line array
     int maxFirstIndex = 0;
     int maxLastIndex = 127;
-    const int maxValue = 16383;
+    // const int threshVal = 16383;
+    const int threshVal = 8000;
     int i;
     for (i = 0; i < 128; i++) {
-        if (line[i] == maxValue) {
+        if (line[i] >= threshVal) {
             maxFirstIndex = i;
             break;
         }
@@ -44,7 +45,7 @@ float getTrackCenterOffset(BOOLEAN* noTrack) {
         return 0;
     }
     for (i = 127; i >= 0; i--) {
-        if (line[i] == maxValue) {
+        if (line[i] >= threshVal) {
             maxLastIndex = i;
             break;
         }
