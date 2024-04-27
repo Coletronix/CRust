@@ -4523,6 +4523,7 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
+ "tty-read",
 ]
 
 [[package]]
@@ -4751,6 +4752,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "06794f8f6c5c898b3275aebefa6b8a1cb24cd2c6c79397ab15774837a0bc5755"
 dependencies = [
  "winapi-util",
+]
+
+[[package]]
+name = "termios"
+version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "411c5bf740737c7918b8b1fe232dca4dc9f8e754b8ad5e20966814001ed0ac6b"
+dependencies = [
+ "libc",
 ]
 
 [[package]]
@@ -4995,6 +5005,15 @@ name = "ttf-parser"
 version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "17f77d76d837a7830fe1d4f12b7b4ba4192c1888001c7164257e4bc6d21d96b4"
+
+[[package]]
+name = "tty-read"
+version = "0.1.0"
+source = "git+https://github.com/timvisee/tty-read-rs#4acaeb222a20c58c7bd69f9728abeceb6746a1b4"
+dependencies = [
+ "libc",
+ "termios",
+]
 
 [[package]]
 name = "twox-hash"

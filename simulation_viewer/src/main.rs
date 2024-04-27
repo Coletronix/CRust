@@ -2,6 +2,8 @@ use std::error::Error;
 use std::io::{stdin, Read};
 use std::ptr::read;
 use std::sync::Arc;
+use std::thread;
+use tokio::sync::mpsc::{self, Receiver};
 use tokio::sync::Mutex;
 
 use bluest::{Adapter, Uuid};
@@ -10,14 +12,46 @@ use tracing::info;
 use tracing::metadata::LevelFilter;
 use tracing_subscriber::prelude::*;
 use tracing_subscriber::{fmt, EnvFilter};
+use tty_read::{ReaderOptions, TermReader};
 
 const READWRITE_SERVICE: Uuid = Uuid::from_u128(0x0000ffe0_0000_1000_8000_00805f9b34fb);
 const READWRITE_CHARACTERISTIC: Uuid = Uuid::from_u128(0x0000ffe1_0000_1000_8000_00805f9b34fb);
 
-const DEVICE_NAME: &str = "CAR11";
+// const DEVICE_NAME: &str = "CAR11";
+const DEVICE_NAME: &str = "CAR_@21";
+
+async fn spawn_stdin_channel() -> Receiver<String> {
+
+    let (tx, rx) = mpsc::channel::<String>(32);
+    tokio::spawn(async move {
+        // Configure reader options
+        let options = ReaderOptions::default();
+
+        // Open a reader
+        let reader = TermReader::open_stdin(&options)
+            .expect("failed to open stdin reader");
+
+        // Read 5 bytes
+        loop {
+            if let Ok(input) = reader.read_bytes(1) {
+                tx.send(input.iter().map(|&x| x as char).collect()).await.unwrap();
+            }
+
+            // let mut buffer = String::new();
+            // let mut buffer = [0; 1];
+            // stdin().read(&mut buffer).unwrap();
+            // // if not newline
+            // if buffer[0] != 10 {
+            //     tx.send(buffer.iter().map(|&x| x as char).collect()).await.unwrap();
+            // }
+        }
+    });
+    rx
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
+    
     tracing_subscriber::registry()
         .with(fmt::layer())
         .with(
@@ -87,6 +121,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 }
             });
             
+            let mut stdin_channel = spawn_stdin_channel().await;
+            
             let rw_char_write = Arc::new(Mutex::new(rw_char.clone()));
 
             let write_handle = rw_char_write.clone();
@@ -94,20 +130,28 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 let mut stdin = stdin();
                 let mut buffer = [0; 1024]; // You can adjust the buffer size as needed
                 loop {
-                    match stdin.read(&mut buffer) {
-                        Ok(n) => {
-                            if n > 0 {
-                                let mut write_stream = write_handle.lock().await;
-                                write_stream.write_without_response(&buffer[..n]).await.unwrap();
-                            }
+                    match stdin_channel.try_recv() {
+                        Ok(mut data) => {
+                            data.make_ascii_lowercase();
+                            let mut write_stream = write_handle.lock().await;
+                            write_stream.write_without_response(data.as_bytes()).await.unwrap();
                         }
-                        Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
-                            println!("Nothing available to read from stdin.");
-                        }
-                        Err(e) => {
-                            eprintln!("Error reading from stdin: {}", e);
-                        }
+                        Err(_) => {}
                     }
+                    // match stdin.read(&mut buffer) {
+                    //     Ok(n) => {
+                    //         if n > 0 {
+                    //             let mut write_stream = write_handle.lock().await;
+                    //             write_stream.write_without_response(&buffer[..n]).await.unwrap();
+                    //         }
+                    //     }
+                    //     Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
+                    //         println!("Nothing available to read from stdin.");
+                    //     }
+                    //     Err(e) => {
+                    //         eprintln!("Error reading from stdin: {}", e);
+                    //     }
+                    // }
                 }
             });
             

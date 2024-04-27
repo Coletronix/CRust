@@ -5,5 +5,6 @@ void slow();
 void fast();
 void fastest();
 void fasterist();
+void driveBySerial();
 
 #endif

@@ -87,7 +87,8 @@ void fast() {
     
     enum State state = STRAIGHT;
     
-    PID turnPID = {57.0, 0.0, 0.0, 0, 0, 10.0};
+    // PID turnPID = {57.0, 0.0, 1000.0, 0, 0, 10.0};
+    PID turnPID = {50.0, 0.0, 1000.0, 0, 0, 10.0};
     PID straightPID = {30.0, 0.0, 1000.0, 0, 0, 10.0};
 
     motor1Power = fastSpeed;
@@ -208,7 +209,7 @@ void fast() {
                     }
                     
                     // if (numFramesStraight > 40) {
-                    if (numFramesStraight > 80) {
+                    if (numFramesStraight > 10) {
                         state = STRAIGHT;
                         startAcceleratingTime = MillisecondCounter2;
                     }
@@ -258,7 +259,7 @@ void fast2() {
     
     int numFramesUnderThreshold = 0;
     
-   PID straightPID = {54.0, 0.0, 10000.0, 0, 0, 10.0};
+    PID straightPID = {54.0, 0.0, 10000.0, 0, 0, 10.0};
 
     motor1Power = fastSpeed;
     motor2Power = fastSpeed;

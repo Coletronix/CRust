@@ -11,6 +11,7 @@ bevy = "0.13.0"
 bevy_egui = "0.25.0"
 bluetooth-serial-port = "0.6.0"
 bluest = "0.6.6"
+tty-read = { git = "https://github.com/timvisee/tty-read-rs" }
 # tokio = "1.37.0"
 
 [dependencies.async-trait]

@@ -48,6 +48,88 @@ void Timer32_2_ISR_3(void) {
 
 void fastest() {
     Timer32_2_Init(&Timer32_2_ISR_3, CalcPeriodFromFrequency(1000), T32DIV1); // initialize Timer A32-1;
+
+    const float diff = 0.006;
+    
+    float motor1Power = 0.0;
+    float motor2Power = 0.0;
+
+    BOOLEAN running = TRUE;
+    int numFramesOffTrack = 0;
+    float fastSpeed = .44;
+    float lastCorrection = 0;
+    
+    int straightCounter = 0;
+    
+    int numFramesUnderThreshold = 0;
+    
+    PID straightPID = {50.0, 0.0, 10000.0, 0, 0, 10.0};
+    // PID straightPID = {20.0, 0.0, 10000.0, 0, 0, 10.0};
+
+    motor1Power = fastSpeed;
+    motor2Power = fastSpeed;
+    while (running) {
+        if (getCameraDataAvailable()) {
+            BOOLEAN noTrack;
+            float centerOffset = getTrackCenterOffset(&noTrack);
+            if (noTrack) {
+                numFramesOffTrack++;
+            } else {
+                numFramesOffTrack = 0;
+            }
+            if (numFramesOffTrack > MAX_FRAMES_OFF_TRACK) {
+                running = FALSE;
+            }
+            
+            setLedLow(LED2_BLUE_PORT, LED2_BLUE_PIN);
+            
+            float correction = PIDUpdate(&straightPID, centerOffset, UPDATE_DT);
+            
+            // float speed = .45 + fabs(correction) * (-.3-.45)/64.0;
+            // float speed = .45 + fabs(centerOffset) * (-.15-.45);
+            float speed = .45 + fabs(centerOffset) * (-.15-.45);
+            // float speed = .5 + fabs(centerOffset) * (-.15-.5);
+            // float speed = .53 + fabs(centerOffset) * (-.3-.53);
+            // float speed = fmin(fabs(.5*correction), .45);
+            
+            // straightPID.P = 50 + ((50.0 - 20.0)/(.45-.53))*(speed-.45);
+            // straightPID.P = 50 + ((50.0 - 20.0)/(.45-.5))*(speed-.45 + .1);
+            // straightPID.P = fmax(20.0, fmin(50.0, straightPID.P));
+             
+            if (fabs(speed) < 0.2) {
+                numFramesUnderThreshold++;
+            } else {
+                numFramesUnderThreshold = 0;
+            }
+            
+            if (numFramesUnderThreshold > 30) {
+                speed = 0.25;
+            }
+            
+            float turnAmt = diff * correction;
+            
+            motor1Power = speed + diff * correction;
+            motor2Power = speed - diff * correction;
+
+            straightCounter++;
+            
+            if (noTrack) {
+                setServoAngle(-lastCorrection);
+            } else {
+                setServoAngle(-correction);
+                lastCorrection = correction;
+            }
+            setMotor1Power(motor1Power);
+            setMotor2Power(motor2Power);
+        }
+    }
+    
+    setMotor1Power(0);
+    setMotor2Power(0);
+}
+
+void fastest1() {
+    Timer32_2_Init(&Timer32_2_ISR_3, CalcPeriodFromFrequency(1000), T32DIV1); // initialize Timer A32-1;
     
     float motor1Power = 0.0;
     float motor2Power = 0.0;

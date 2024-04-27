@@ -153,6 +153,8 @@ int main(void) {
     int startSwitchTime = 0;
     BOOLEAN startSwitchTiming = FALSE;
     
+    uint32_t lastDebounceTime = MillisecondCounter;
+    
     // wait until a button is pressed, and run the corresponding program
     while(1) {
         // if (Switch1_Pressed()) {
@@ -164,13 +166,34 @@ int main(void) {
         //     fast();
         // }
         
-        if (Switch2_Pressed() && previouslyPressed == 0) {
-            selectedSpeedMode = (selectedSpeedMode + 1) % 4;
-            startSwitchTime = MillisecondCounter;
-            startSwitchTiming = TRUE;
+        // if (Switch2_Pressed() && previouslyPressed == 0) {
+        //     selectedSpeedMode = (selectedSpeedMode + 1) % 4;
+        //     startSwitchTime = MillisecondCounter;
+        //     startSwitchTiming = TRUE;
+        // }
+        
+        BOOLEAN reading = Switch2_Pressed();
+        
+        if ((MillisecondCounter - lastDebounceTime) > 50) {
+            if (reading != previouslyPressed) {
+                lastDebounceTime = MillisecondCounter;
+                
+                if (reading) {
+                    selectedSpeedMode = (selectedSpeedMode + 1) % 4;
+                    startSwitchTime = MillisecondCounter;
+                    startSwitchTiming = TRUE;
+                }
+            }
         }
         
-        previouslyPressed = Switch2_Pressed();
+        previouslyPressed = reading;
+        
+        if (Switch1_Pressed()) {
+            setLedHigh(LED2_RED_PORT, LED2_RED_PIN);
+            setLedHigh(LED2_GREEN_PORT, LED2_GREEN_PIN);
+            setLedHigh(LED2_BLUE_PORT, LED2_BLUE_PIN);
+            driveBySerial();
+        }
         
         switch (selectedSpeedMode) {
             case 0:
