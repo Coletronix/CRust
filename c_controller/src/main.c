@@ -25,6 +25,7 @@
 
 extern BOOLEAN g_sendData;
 
+// setup everything needed to run the camera
 void INIT_Camera(void) {
     g_sendData = FALSE;
     ControlPin_SI_Init();
@@ -36,15 +37,17 @@ void INIT_Camera(void) {
 // main
 //
 int main(void) {
+    // initialize everything the system use
+    Switch1_Init();
     servoInit();
     motor1Init();
     motor2Init();
     INIT_Camera();
     
-    // wait until a button is pressed, and run the corresponding program
     while(1) {
+        // wait until a button is pressed, and run the program
         if (Switch1_Pressed()) {
-            fastest();
+            fastest(); // only mode :-)
         }
     }
 }
