@@ -17,8 +17,8 @@ use tty_read::{ReaderOptions, TermReader};
 const READWRITE_SERVICE: Uuid = Uuid::from_u128(0x0000ffe0_0000_1000_8000_00805f9b34fb);
 const READWRITE_CHARACTERISTIC: Uuid = Uuid::from_u128(0x0000ffe1_0000_1000_8000_00805f9b34fb);
 
-// const DEVICE_NAME: &str = "CAR11";
-const DEVICE_NAME: &str = "CAR_@21";
+const DEVICE_NAME: &str = "CAR11";
+// const DEVICE_NAME: &str = "CAR_@21";
 
 async fn spawn_stdin_channel() -> Receiver<String> {
 

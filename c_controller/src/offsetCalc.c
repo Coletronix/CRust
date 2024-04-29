@@ -54,6 +54,7 @@ float getTrackCenterOffset(BOOLEAN* noTrack) {
     // const int threshVal = 16383;
     // const int threshVal = 3000;
     const int threshVal = 8000;
+    // const int threshVal = 12000;
     // const int threshVal = 5500;
     // const int threshVal = 5000;
     int i;
